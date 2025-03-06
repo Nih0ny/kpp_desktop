@@ -1,131 +1,199 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
 import React from "react";
+import { Card, CardContent } from "../../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Carousel } from "react-responsive-carousel";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
+import axios from "axios";
 
 interface Product {
-  asin: string;
-  product_title: string;
-  product_price: string;
-  product_original_price: string;
-  currency: string;
-  product_star_rating: string;
-  product_num_ratings: number;
-  product_url: string;
-  product_photo: string;
-  product_num_offers: number;
-  product_minimum_offer_price: string;
-  is_best_seller: boolean;
-  is_amazon_choice: boolean;
-  is_prime: boolean;
-  product_availability?: string;
-  climate_pledge_friendly: boolean;
-  sales_volume: string;
-  delivery: string;
-  has_variations: boolean;
+  title: string | null;
+  price: string | null;
+  oldPrice: string | null;
+  rating: string | null;
+  reviewCount: string | null;
+  availability: string | null;
+  seller: string | null;
+  images: string | null;
+  breadcrumbs: string | null;
+  description: string | null;
+  attributes: string | null;
+  reviews: string | null;
+  similarProducts: string | null;
+  url: string | null;
 }
 
 const Product: React.FunctionComponent<{ product: Product }> = ({
   product,
 }) => {
   return (
-    <div className="max-w-sm bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition-all">
-      <div className="relative w-full h-64">
-        <Image
-          src={product.product_photo}
-          alt={product.product_title}
-          layout="fill"
-          objectFit="contain"
-          className="rounded-lg"
-        />
+    <div className="p-6 max-w-5xl mx-auto">
+      {/* Заголовок */}
+      <h1 className="text-2xl font-bold mb-4">{product.title}</h1>
+
+      {/* Основний блок */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Карусель зображень */}
+        <div>
+          <Carousel showThumbs={false} infiniteLoop>
+            {product.images.map((img, index) => (
+              <div key={index}>
+                <img src={img} alt={product.title} className="rounded-lg" />
+              </div>
+            ))}
+          </Carousel>
+        </div>
+
+        {/* Інформація справа */}
+        <div className="space-y-4">
+          <p className="text-lg font-semibold">Ціна: {product.price} грн</p>
+          {product.oldPrice && (
+            <p className="text-red-500 line-through">
+              Стара ціна: {product.oldPrice} грн
+            </p>
+          )}
+          <p className="text-green-600 font-semibold">{product.availability}</p>
+          <p className="text-gray-600">{product.breadcrumbs}</p>
+        </div>
       </div>
-      <div className="mt-4">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {product.product_title}
-        </h2>
-        <p className="text-sm text-gray-500">ASIN: {product.asin}</p>
-        <div className="mt-2 flex items-center space-x-2">
-          <span className="text-lg font-bold text-green-600">
-            {product.product_price}
-          </span>
-          <span className="text-sm line-through text-gray-400">
-            {product.product_original_price}
-          </span>
+
+      {/* Опис товару */}
+      <div className="mt-6">
+        <h2 className="text-xl font-bold mb-2">Опис</h2>
+        <p dangerouslySetInnerHTML={{ __html: product.description }} />
+      </div>
+
+      {/* Атрибути товару */}
+      <div className="mt-6">
+        <h2 className="text-xl font-bold mb-2">Характеристики</h2>
+        <div>
+          {product.attributes.map((attr, index) => (
+            <p key={index}>
+              <span className="font-bold">{attr.label}</span> - {attr.text}
+            </p>
+          ))}
         </div>
-        <p className="text-sm text-gray-500">Currency: {product.currency}</p>
-        <div className="flex items-center mt-2">
-          <span className="text-yellow-500 font-bold">
-            {product.product_star_rating}★
-          </span>
-          <span className="ml-2 text-sm text-gray-600">
-            ({product.product_num_ratings} reviews)
-          </span>
+      </div>
+
+      {/* Схожі товари */}
+      <div className="mt-6">
+        <h2 className="text-xl font-bold mb-4">Схожі товари</h2>
+        <div className="flex gap-4 overflow-x-auto">
+          {product.similarProducts.map(
+            (product, index) =>
+              product.title && (
+                <div
+                  key={index}
+                  className="w-48 p-4 border rounded-lg shadow-md"
+                >
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="w-full h-32 object-cover rounded-md"
+                  />
+                  <h3 className="text-md font-semibold mt-2 truncate">
+                    {product.title}
+                  </h3>
+                  <p className="text-lg font-bold">{product.price} грн</p>
+                  <Button asChild>
+                    <button
+                      onClick={() =>
+                        (window.location.href =
+                          "/product/" +
+                          product.title.trim().replace("/", "") +
+                          "?url=" +
+                          product.href)
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Перейти
+                    </button>
+                  </Button>
+                </div>
+              )
+          )}
         </div>
-        {product.is_prime && (
-          <span className="bg-blue-500 text-white px-2 py-1 text-xs rounded-md mt-2 inline-block">
-            Prime
-          </span>
-        )}
-        {product.is_best_seller && (
-          <span className="bg-orange-500 text-white px-2 py-1 text-xs rounded-md ml-2">
-            Best Seller
-          </span>
-        )}
-        {product.is_amazon_choice && (
-          <span className="bg-black text-white px-2 py-1 text-xs rounded-md ml-2">
-            Amazon`s Choice
-          </span>
-        )}
-        <p className="text-sm text-gray-700 mt-2">{product.sales_volume}</p>
-        <p className="text-sm text-gray-700">{product.delivery}</p>
-        {product.product_availability ? (
-          <p className="text-sm font-semibold text-red-600">
-            {product.product_availability}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-500">
-            Availability: Information not available
-          </p>
-        )}
-        <a
-          href={product.product_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-4 text-center bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-all"
-        >
-          View on Amazon
-        </a>
+      </div>
+
+      {/* Кнопка для переходу */}
+      <div className="mt-6 text-center">
+        <Button asChild>
+          <a href={product.url} target="_blank" rel="noopener noreferrer">
+            Відкрити в браузері
+          </a>
+        </Button>
       </div>
     </div>
   );
 };
 
-export default function ProductPage(): React.ReactElement {
-  const productData: Product = {
-    asin: "B0CRVWXJ6H",
-    product_title:
-      "Samsung Galaxy A25 5G (SM-A256E/DS), 128GB 6GB RAM, Dual SIM, Factory Unlocked GSM, International Version (Wall Charger Bundle) - (Blue Black)",
-    product_price: "$182.00",
-    product_original_price: "$194.99",
-    currency: "USD",
-    product_star_rating: "4.1",
-    product_num_ratings: 113,
-    product_url: "https://www.amazon.com/dp/B0CRVWXJ6H",
-    product_photo:
-      "https://m.media-amazon.com/images/I/51m744UUjYL._AC_UY654_FMwebp_QL65_.jpg",
-    product_num_offers: 20,
-    product_minimum_offer_price: "$169.99",
-    is_best_seller: false,
-    is_amazon_choice: false,
-    is_prime: true,
-    product_availability: "Only 15 left in stock - order soon.",
-    climate_pledge_friendly: false,
-    sales_volume: "1K+ bought in past month",
-    delivery: "FREE delivery Wed, Jul 10 Only 15 left in stock - order soon.",
-    has_variations: true,
+const ProductPage = () => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [product, setProducts] = useState<Product | null | any>(null);
+
+  const fetchProduct = async () => {
+    console.log(window.location.href.split("?")[1].split("=")[1]);
+    console.log("!!!");
+    const newProduct: Product = await axios
+      .get(
+        "http://localhost:3001/parse-rozetka-page?url=" +
+          window.location.href.split("?")[1].split("=")[1]
+      )
+      .then((response) => {
+        return response.data;
+      });
+    console.log(newProduct);
+    setProducts(newProduct);
   };
 
-  return (
-    <>
-      <Product product={productData} />
-    </>
+  useEffect(() => {
+    fetchProduct();
+  }, []);
+
+  // Нові дані
+  const nextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev < product.images.length - 1 ? prev + 1 : 0
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev > 0 ? prev - 1 : product.images.length - 1
+    );
+  };
+
+  return product ? (
+    <Product product={product}></Product>
+  ) : (
+    <div style={styles.loadingContainer}>
+      <p style={styles.loadingText}>Триває парсинг, зачекайте...</p>
+    </div>
   );
-}
+};
+
+const styles = {
+  loadingContainer: {
+    display: "flex",
+    justifyContent: "center", // Відцентровано по горизонталі
+    alignItems: "center", // Відцентровано по вертикалі
+    height: "100vh", // Висота на весь екран
+    backgroundColor: "rgba(255, 255, 255, 0.8)", // Прозорий фон, щоб не було видно тільки фон браузера
+    position: "fixed", // Закріплення на екрані
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  loadingText: {
+    fontSize: "24px", // Можна налаштувати розмір тексту
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+};
+
+export default ProductPage;
